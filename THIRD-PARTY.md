@@ -53,3 +53,9 @@
 
 皮肤资源（角色立绘、装饰、预览图等）版权归原作者。本仓库**不是**皮肤的授权代理；
 商用、修改后商用等超出 CC BY-NC-SA 4.0 范围的使用请直接联系原作者。
+
+## 仓库根 LICENSE 的适用范围
+
+仓库根目录的 `LICENSE`（MIT）仅覆盖本仓库的**原创部分**（管理器插件
+`dsh-client-ui-skin-manager`、`install-skin.ps1` 及文档）；内置的两款皮肤
+**不属于** MIT 范围，仍以各自包内 `LICENSE` / `NOTICE`（CC BY-NC-SA 4.0）为准。
