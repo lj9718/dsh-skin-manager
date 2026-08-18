@@ -120,29 +120,45 @@ else {
   Write-Ok "已复制"
 }
 
-# ---------- 4. profile 注册行（幂等追加） ----------
+# ---------- 4. profile 注册行（幂等 + 容错追加） ----------
+# 容错：若起始标记存在但结束标记丢失（如手工编辑吞掉），
+# 从起始标记到文件末尾整块重建（保留已有行 + 补回结束标记），不抛错。
 function Add-RegistryRow($file, $rowId, $name) {
   $text = ""
   if (Test-Path $file) { $text = Get-Content $file -Raw }
   if ($text -match [regex]::Escape("- id: " + $rowId)) { return $false }
-  # 找到 REGISTRY 区域的 insert 块；没有则新建一个受管块
-  if ($text.Contains($REGISTRY_START)) {
-    $start = $text.IndexOf($REGISTRY_START)
+  $start = $text.IndexOf($REGISTRY_START)
+  if ($start -ge 0) {
     $end = $text.IndexOf($REGISTRY_END, $start)
-    if ($end -lt 0) { throw "profile 补丁的注册区缺少结束标记: $REGISTRY_END" }
-    $block = $text.Substring($start, $end - $start + $REGISTRY_END.Length)
-    if ($block -match "insert:") {
-      $replacement = "- insert:`n    - id: " + $rowId + "`n      name: '" + $name + "'"
-      $newBlock = $block -replace "- insert:", $replacement
-      $text = $text.Remove($start, $block.Length).Insert($start, $newBlock)
+    $tail = ""
+    if ($end -ge 0) {
+      $zoneText = $text.Substring($start, $end - $start + $REGISTRY_END.Length)
+      $tail = $text.Substring($end + $REGISTRY_END.Length)
     } else {
-      # 注册区没有 insert 块：在区域内补一个
-      $inner = "`n- insert:`n    - id: " + $rowId + "`n      name: '" + $name + "'`n"
-      $text = $text.Remove($start, $block.Length).Insert($start, $REGISTRY_START + $inner + $REGISTRY_END)
+      $zoneText = $text.Substring($start)   # 结束标记缺失：块到文件末尾
     }
+    # 逐行提取 (id, name) 对，保序去重
+    $order = [System.Collections.Generic.List[string]]::new()
+    $names = @{}
+    $lines = $zoneText -split "`n"
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+      $m = [regex]::Match($lines[$i], '^\s*- id:\s*([A-Za-z0-9_.-]+)\s*$|^\s+id:\s*([A-Za-z0-9_.-]+)\s*$')
+      if ($m.Success) {
+        $rid = if ($m.Groups[1].Value) { $m.Groups[1].Value } else { $m.Groups[2].Value }
+        if (-not $names.ContainsKey($rid) -and $i + 1 -lt $lines.Count) {
+          $nm = [regex]::Match($lines[$i+1], '^\s+name:\s*[''"]?(@?[^''"\s]+)[''"]?\s*$')
+          if ($nm.Success) { $names[$rid] = $nm.Groups[1].Value; [void]$order.Add($rid) }
+        }
+      }
+    }
+    $rows = @()
+    foreach ($rid in $order) { $rows += ("    - id: " + $rid + "`n      name: '" + $names[$rid] + "'") }
+    $rows += ("    - id: " + $rowId + "`n      name: '" + $name + "'")
+    $newBlock = $REGISTRY_START + "`n- insert:`n" + ($rows -join "`n") + "`n" + $REGISTRY_END
+    $text = $text.Remove($start) + $newBlock + $tail
   } else {
-    $newBlock = "`n`n" + $REGISTRY_START + "`n- insert:`n    - id: " + $rowId + "`n      name: '" + $name + "'`n" + $REGISTRY_END + "`n"
-    $text = $text.TrimEnd() + $newBlock
+    $newBlock = $REGISTRY_START + "`n- insert:`n    - id: " + $rowId + "`n      name: '" + $name + "'`n" + $REGISTRY_END + "`n"
+    $text = $text.TrimEnd() + "`n`n" + $newBlock
   }
   Set-Content -NoNewline -Encoding utf8 $file $text
   return $true
@@ -152,27 +168,42 @@ Write-Step "注册行到 profile 补丁: $profilePatch"
 if ($WhatIf) { Write-Ok "(WhatIf) 将追加行 $rowId -> $profilePatch" }
 else { if (Add-RegistryRow $profilePatch $rowId $name) { Write-Ok "已追加行 $rowId" } else { Write-Ok "行已存在，跳过" } }
 
-# ---------- 5. home 层 flag（幂等追加；默认新皮肤不激活） ----------
+# ---------- 5. home 层 flag（幂等 + 容错追加；默认新皮肤不激活） ----------
 function Add-FlagRow($file, $rowId, $disabled) {
   $text = ""
   if (Test-Path $file) { $text = Get-Content $file -Raw }
   if ($text -match [regex]::Escape("- id: " + $rowId)) { return $false }
   $flag = if ($disabled) { "disabled: true" } else { "disabled: false" }
   $flagText = "- id: " + $rowId + "`n  " + $flag
-  if ($text.Contains($MANAGED_START)) {
-    $start = $text.IndexOf($MANAGED_START)
+  $start = $text.IndexOf($MANAGED_START)
+  if ($start -ge 0) {
     $end = $text.IndexOf($MANAGED_END, $start)
-    if ($end -lt 0) { throw "home 补丁的受管区缺少结束标记: $MANAGED_END" }
-    $block = $text.Substring($start, $end - $start + $MANAGED_END.Length)
-    $inner = $block.Substring($MANAGED_START.Length, $block.Length - $MANAGED_START.Length - $MANAGED_END.Length)
-    $inner = [regex]::Replace($inner, '(?m)^\s*\[\]\s*$', '')  # 移除空数组占位行
-    if ($inner.Trim() -eq "") { $newInner = $flagText + "`n" }
-    else { $newInner = $inner.TrimEnd() + "`n" + $flagText + "`n" }
-    $newBlock = $MANAGED_START + "`n" + $newInner + $MANAGED_END
-    $text = $text.Remove($start, $block.Length).Insert($start, $newBlock)
+    $tail = ""
+    if ($end -ge 0) {
+      $zoneText = $text.Substring($start, $end - $start + $MANAGED_END.Length)
+      $tail = $text.Substring($end + $MANAGED_END.Length)
+    } else {
+      $zoneText = $text.Substring($start)
+    }
+    # 保序提取已有 flag 行（连同其当前 disabled 值），跳过注释与空数组占位行
+    $flags = [System.Collections.Generic.List[object]]::new()
+    $lines = $zoneText -split "`n"
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+      if ($lines[$i] -match '^\s*-[ \t]*id:\s*([A-Za-z0-9_.-]+)\s*$') {
+        $rid = $Matches[1]
+        $val = "true"
+        if ($i + 1 -lt $lines.Count -and $lines[$i+1] -match '^\s*disabled:\s*(true|false)\s*$') { $val = $Matches[1] }
+        [void]$flags.Add(@{ id = $rid; d = $val })
+      }
+    }
+    $rows = @()
+    foreach ($rec in $flags) { $rows += ("- id: " + $rec.id + "`n  disabled: " + $rec.d) }
+    $rows += $flagText
+    $newBlock = $MANAGED_START + "`n" + ($rows -join "`n") + "`n" + $MANAGED_END
+    $text = $text.Remove($start) + $newBlock + $tail
   } else {
-    $newBlock = "`n`n" + $MANAGED_START + "`n" + $flagText + "`n" + $MANAGED_END + "`n"
-    $text = $text.TrimEnd() + $newBlock
+    $newBlock = $MANAGED_START + "`n" + $flagText + "`n" + $MANAGED_END + "`n"
+    $text = $text.TrimEnd() + "`n`n" + $newBlock
   }
   Set-Content -NoNewline -Encoding utf8 $file $text
   return $true

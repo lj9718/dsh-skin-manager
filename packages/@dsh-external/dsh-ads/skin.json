@@ -1,0 +1,14 @@
+{
+  "id": "dsh-ads",
+  "name": "2005 门户整活皮肤",
+  "nameEn": "DSH Ads (2005 Portal)",
+  "author": "Nagi-ovo (Jesse Zhang)",
+  "tagline": "把 DSH 变成 2005 年门户网站：弹窗广告、假游戏、奖励轮盘、骗局弹窗",
+  "description": "Nagi-ovo/dsh-ads 的整活插件：本地化中文门户广告与英文骗局广告恶搞、假弹窗、抽奖转盘、奖励推理广告与假游戏动画。BSD-3-Clause。",
+  "tags": ["parody", "ads", "2005", "portal"],
+  "accent": "#ff6b00",
+  "package": "@dsh-external/dsh-ads",
+  "wiring": { "id": "ui-skin-dsh-ads", "bundleWired": false },
+  "preview": { "light": "preview/light.webp" },
+  "order": 55
+}

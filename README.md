@@ -1,6 +1,6 @@
 # dsh 皮肤管理器（自包含离线移植包）
 
-为 DeepSeek Harness Web GUI（`dsh web`）准备的**皮肤管理器 + 两套皮肤 + 一键安装脚本**仓库。
+为 DeepSeek Harness Web GUI（`dsh web`）准备的**皮肤管理器 + 三套皮肤 + 一键安装脚本**仓库。
 把整个仓库复制到任意机器，跑一遍脚本即可用；之后切换皮肤全部走配置 HMR，**无需重启服务**。
 
 - 管理器插件：`@dsh-external/dsh-client-ui-skin-manager`
@@ -8,6 +8,7 @@
 - 内置皮肤：
   - `@dsh-external/dsh-client-ui-skin-deep-whale-day-night`（鲸鱼娘昼夜工坊，v0.1.10 独立模式）
   - `@dsh-external/dsh-client-ui-skin-maid-atelier`（深海女仆工坊，v0.0.1）
+  - `@dsh-external/dsh-ads`（2005 门户整活皮肤，BSD-3-Clause）
 - 安装脚本：`install-skin.ps1`（任意新皮肤一条命令安装）
 
 > 验证环境：rc.7 开发服务（`apps/cli/src/bin.ts web`）与 rc.6 npm 部署均可用。
@@ -24,15 +25,17 @@ skin-manager/
     └── @dsh-external/
         ├── dsh-client-ui-skin-manager/             # 管理器插件（node 半 + 浏览器半）
         ├── dsh-client-ui-skin-deep-whale-day-night/ # 昼夜鲸鱼娘（独立模式修补版）
-        └── dsh-client-ui-skin-maid-atelier/         # 深海女仆工坊（原样上游）
+        ├── dsh-client-ui-skin-maid-atelier/         # 深海女仆工坊（原样上游）
+        └── dsh-ads/                                 # 2005 门户整活皮肤（精简版 + 补 skin.json）
 ```
 
 ## 快速开始（新机器）
 
 ```powershell
-# 1. 安装两款内置皮肤（顺序无关）
+# 1. 安装内置皮肤（顺序无关）
 .\install-skin.ps1 -PackageDir ".\packages\@dsh-external\dsh-client-ui-skin-deep-whale-day-night"
 .\install-skin.ps1 -PackageDir ".\packages\@dsh-external\dsh-client-ui-skin-maid-atelier"
+.\install-skin.ps1 -PackageDir ".\packages\@dsh-external\dsh-ads"
 
 # 2. 重启一次 dsh 服务（注册行属于安装期操作）
 #    （自己的开发服务：kill 后重新运行启动命令；rc.6 npm 部署同理）

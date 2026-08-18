@@ -41,12 +41,31 @@
 
 **改动：** 无（原样收录；`skin.json` 的 `wiring.id` 恰好与其按包名推导的行 id 一致）。
 
+## 3. 2005 门户整活皮肤（DSH Ads）
+
+| 项 | 值 |
+|---|---|
+| 来源 | https://github.com/Nagi-ovo/dsh-ads |
+| 收录版本 | main 分支快照（2026-08-18，zip 下载；README 称"把 DSH 变成 2005 年门户网站"） |
+| 包名（本仓库） | `@dsh-external/dsh-ads` |
+| 作者 | Nagi-ovo（Jesse Zhang） |
+| 许可 | BSD 3-Clause（包内 LICENSE） |
+
+**本仓库的改动（仅打包层面）：**
+
+1. 新增 `skin.json`（管理器卡片元数据：id `dsh-ads`、名称、标签、强调色、用 `assets/screenshot.webp` 作为预览）——上游分发无需该文件，但没有它管理器列表不显示。
+2. 精简收录：只保留运行时所需的 `lib/`（client.js 12.4MB 自包含构建产物、index.js 宿主半、index.d.ts）、`LICENSE`、`README.md`、`cordis.patch.yml`、`preview/`；**丢弃**约 66MB 的 `assets/` 构建源料与 `src/`、`tests/`、`scripts/`、`contrib/`、`pnpm-*` 等。
+3. 注册行 id：`ui-skin-dsh-ads`（按包名推导，与其 bundle 补丁自带的 `dsh-ads` 行 id 不同——本仓库用管理器统一管理，不加载其 bundle 补丁）。
+
+> 注意：该插件的宿主半会通过 GitHub 的 `dsh-plugin` topic 搜索"动态广告层"（`child_process` 调用）；
+> 离线/无外网环境下该层可能不工作，但内置横幅广告由浏览器包自带，不受影响。
+
 ## 署名要求
 
-按 CC BY-NC-SA 4.0 要求保留署名。若转发/再分发本仓库，请保留：
+按各皮肤许可证要求保留署名。若转发/再分发本仓库，请保留：
 - 各包内 `LICENSE` / `NOTICE` 文件；
 - 画师署名：上善（Shangshan）/ ZipZipPipe；
-- 皮肤作者：Small-tailqwq、GGBond2424648901；
+- 皮肤作者：Small-tailqwq、GGBond2424648901、Nagi-ovo；
 - 本 `THIRD-PARTY.md` 的来源与改动说明。
 
 ## 版权声明
