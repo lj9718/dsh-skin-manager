@@ -1,0 +1,25 @@
+{
+  "name": "@dsh-external/dsh-client-ui-skin-manager",
+  "description": "Skin manager for the dsh web GUI: scans installed ui-skin packages, lists them with previews in Settings, and switches the active skin by rewriting the home-layer patch mutual-exclusion zone (config HMR, no server restart). Dual-face: node half exposes a skinManager Remote service; browser half renders the Settings > Appearance & Skins page.",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "slots",
+        "locale",
+        "remote",
+        "remote.skinManager"
+      ],
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

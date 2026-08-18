@@ -1,0 +1,15 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# 由管理器/安装脚本生成的备份（.bak-<timestamp> 与内部 ISO 时间戳命名）
+*.bak-*
+*.bak
+
+# 皮肤包内自带依赖（本仓库不收录）
+node_modules/
+
+# 本地临时产物
+.tmp-*
